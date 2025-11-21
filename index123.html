@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>所见皆如画，所闻尽若诗</title>
+    <!-- 内联关键CSS -->
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23d88373'%3E%3Cpath d='M12 2c-4.2 0-8 3.22-8 8.2 0 3.18 2.45 6.92 7.34 11.23.5.46 1.24.46 1.74 0C15.55 17.12 18 13.38 18 10.2 18 5.22 14.2 2 12 2zm0 1.8c3.39 0 6.2 2.69 6.2 6.4 0 2.91-2.15 6.34-6.2 9.94-4.05-3.6-6.2-7.03-6.2-9.94 0-3.71 2.81-6.4 6.2-6.4z'/%3E%3C/svg%3E") 12 12, auto;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+        }
+        
+        /* 封面样式 */
+        .cover-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 1s ease-out, visibility 0s linear 1s;
+        }
+        
+        .cover-container.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .cover-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 保持比例填充 */
+            z-index: -1;
+        }
+        
+        .cloud-shape {
+            position: relative;
+            background: #f0f7ff;
+            border-radius: 50%;
+            box-shadow: 
+                10px 10px 0 0 #f0f7ff,
+                -10px 10px 0 0 #f0f7ff,
+                20px 0 0 0 #f0f7ff,
+                -20px 0 0 0 #f0f7ff;
+            width: clamp(120px, 40vw, 180px); /* 响应式宽度 */
+            height: clamp(50px, 20vw, 80px); /* 响应式高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation; /* 优化触摸体验 */
+        }
+        
+        .cloud-shape:hover,
+        .cloud-shape:active { /* 添加触摸反馈 */
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 
+                12px 12px 0 0 #f0f7ff,
+                -12px 12px 0 0 #f0f7ff,
+                22px 0 0 0 #f0f7ff,
+                -22px 0 0 0 #f0f7ff;
+        }
+        
+        .cloud-shape span {
+            color: #d88373;
+            font-size: clamp(1.8rem, 10vw, 3rem); /* 响应式字体 */
+            font-weight: bold;
+        }
+        
+        /* 主内容基础样式 */
+        .main-content {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 1s ease-out 0.5s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        .main-content.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .background-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover; /* 保持比例填充 */
+            z-index: -1;
+        }
+    </style>
+    <!-- 异步加载非关键CSS -->
+    <link rel="preload" href="non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="non-critical.css"></noscript>
+    
+    <!-- 字体加载优化：添加preload并设置字体显示策略 -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/mashanzheng/v15/0nknC9ziJOYe8ANAkA9m60J5fa7g.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: 'Ma Shan Zheng';
+            font-style: normal;
+            font-weight: 400;
+            src: url('https://fonts.gstatic.com/s/mashanzheng/v15/0nknC9ziJOYe8ANAkA9m60J5fa7g.woff2') format('woff2');
+            font-display: swap;
+        }
+    </style>
+</head>
+<body>
+    <!-- 封面页面 -->
+    <div class="cover-container" id="coverContainer">
+        <img src="http://t5zd6qsio.hn-bkt.clouddn.com/%E5%9B%BE%E4%B8%89.jpg" alt="花卉封面" class="cover-image" loading="eager">
+        <div class="cloud-shape" id="enterButton">
+            <span class="font-'Ma Shan Zheng'">走进</span>
+        </div>
+    </div>
+
+    <!-- 主内容页面 -->
+    <div class="main-content" id="mainContent">
+        <video class="background-video" autoplay loop muted playsinline poster="http://t5zd6qsio.hn-bkt.clouddn.com/wuwangwo.jpg">
+            <source src="http://t5zd6qsio.hn-bkt.clouddn.com/%E5%8B%BF%E5%BF%98%E6%88%91%E8%8A%B1%E6%B5%B7.mp4" type="video/mp4">
+        </video>
+        
+        <p class="artistic-text">所见皆如画，所闻尽若诗</p>
+        
+        <div class="popup" id="popup">
+            <p class="popup-text" id="popupText"></p>
+        </div>
+    </div>
+
+    <script>
+        // 生成非关键CSS文件内容（实际项目中应提取为单独文件）
+        const nonCriticalCSS = `
+            .artistic-text {
+                font-family: 'Ma Shan Zheng', cursive;
+                font-size: clamp(1.8rem, 8vw, 4rem); /* 优化移动端字体大小 */
+                color: #ffffff;
+                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5),
+                             0 0 10px rgba(255, 255, 255, 0.3);
+                padding: 10px 20px; /* 减少内边距适应小屏幕 */
+                background-color: rgba(0, 0, 0, 0.3);
+                border-radius: 12px;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                margin: 0;
+                position: absolute;
+                top: 8%;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                text-align: center; /* 确保文字居中 */
+                max-width: 90%; /* 限制最大宽度 */
+            }
+            
+            .popup {
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 50;
+                padding: 15px; /* 减少内边距 */
+                width: 90%; /* 适应屏幕宽度 */
+            }
+            
+            .popup.visible {
+                display: block;
+                animation: fadeInUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            }
+            
+            @keyframes fadeInUp {
+                0% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.8);
+                    filter: blur(10px);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                    filter: blur(0);
+                }
+            }
+            
+            .popup-text {
+                font-size: clamp(2rem, 12vw, 5rem); /* 优化移动端字体 */
+                font-family: 'Ma Shan Zheng', cursive;
+                text-align: center;
+                margin: 0;
+                color: #ffffff;
+                text-shadow: 
+                    0 0 5px rgba(255, 255, 255, 0.8),
+                    0 0 10px rgba(255, 215, 0, 0.6),
+                    0 0 20px rgba(255, 105, 180, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.5);
+                letter-spacing: 2px;
+                -webkit-text-stroke: 1px rgba(0, 0, 0, 0.3);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                word-break: keep-all; /* 防止文字折断 */
+            }
+            
+            .popup.visible .popup-text {
+                animation: pulse 2s ease-in-out infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% {
+                    text-shadow: 
+                        0 0 5px rgba(255, 255, 255, 0.8),
+                        0 0 10px rgba(255, 215, 0, 0.6),
+                        0 0 20px rgba(255, 105, 180, 0.4),
+                        0 2px 4px rgba(0, 0, 0, 0.5);
+                }
+                50% {
+                    text-shadow: 
+                        0 0 8px rgba(255, 255, 255, 1),
+                        0 0 15px rgba(255, 215, 0, 0.8),
+                        0 0 30px rgba(255, 105, 180, 0.6),
+                        0 2px 6px rgba(0, 0, 0, 0.7);
+                }
+            }
+
+            /* 移动端触摸反馈优化 */
+            @media (max-width: 768px) {
+                .cloud-shape {
+                    width: 140px;
+                    height: 60px;
+                }
+                
+                .cloud-shape span {
+                    font-size: 2rem;
+                }
+            }
+        `;
+        
+        // 动态创建非关键CSS文件（实际项目中应提前生成该文件）
+        if (typeof document !== 'undefined') {
+            // 检查是否存在non-critical.css，如果不存在则动态创建
+            const link = document.querySelector('link[href="non-critical.css"]');
+            if (link) {
+                link.addEventListener('error', () => {
+                    const style = document.createElement('style');
+                    style.textContent = nonCriticalCSS;
+                    document.head.appendChild(style);
+                });
+            }
+        }
+
+        // 农历转换工具类
+        class LunarCalendar {
+            static lunarInfo = [
+                0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+                0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+                0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+                0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+                0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+                0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0
+            ];
+            
+            static solarToLunar(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                
+                let totalDays = this.countDays(year, month, day);
+                let index = 0;
+                let i = 1900;
+                
+                while (i < year && index < this.lunarInfo.length) {
+                    const daysInYear = this.isLeapYear(i) ? 384 : 354;
+                    totalDays -= daysInYear;
+                    i++;
+                    index++;
+                }
+                
+                if (totalDays <= 0) {
+                    i--;
+                    index--;
+                    totalDays += this.isLeapYear(i) ? 384 : 354;
+                }
+                
+                const lunarYear = i;
+                let leapMonth = this.getLeapMonth(lunarYear);
+                let isLeap = false;
+                let lunarMonth = 0;
+                let lunarDay = 0;
+                
+                i = 1;
+                while (i < 13 && totalDays > 0) {
+                    if (leapMonth > 0 && i === leapMonth + 1 && !isLeap) {
+                        i--;
+                        isLeap = true;
+                        leapMonth = -1;
+                    } else {
+                        const daysInMonth = this.getDaysInMonth(lunarYear, i, isLeap);
+                        totalDays -= daysInMonth;
+                        
+                        if (totalDays <= 0) {
+                            lunarMonth = i;
+                            lunarDay = totalDays + daysInMonth;
+                            break;
+                        }
+                        
+                        if (isLeap) {
+                            isLeap = false;
+                            leapMonth = -1;
+                        }
+                        i++;
+                    }
+                }
+                
+                if (lunarMonth === 0) {
+                    lunarMonth = 12;
+                }
+                
+                return {
+                    month: lunarMonth,
+                    day: lunarDay
+                };
+            }
+            
+            static isLeapYear(year) {
+                return (this.lunarInfo[year - 1900] & 0x0001) === 1;
+            }
+            
+            static getLeapMonth(year) {
+                return (this.lunarInfo[year - 1900] & 0x000f);
+            }
+            
+            static getDaysInMonth(year, month, isLeap) {
+                const info = this.lunarInfo[year - 1900];
+                return isLeap ? (info & 0x0010 ? 30 : 29) : 
+                               ((info >> (month + 3)) & 0x0001 ? 30 : 29);
+            }
+            
+            static countDays(year, month, day) {
+                let total = 0;
+                for (let i = 1900; i < year; i++) {
+                    total += this.isLeapYear(i) ? 366 : 365;
+                }
+                
+                for (let i = 1; i < month; i++) {
+                    total += this.getDaysInSolarMonth(i, year);
+                }
+                
+                total += day - 1;
+                return total;
+            }
+            
+            static getDaysInSolarMonth(month, year) {
+                switch (month) {
+                    case 2:
+                        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 29 : 28;
+                    case 4: case 6: case 9: case 11:
+                        return 30;
+                    default:
+                        return 31;
+                }
+            }
+        }
+
+        // 交互逻辑
+        const coverContainer = document.getElementById('coverContainer');
+        const enterButton = document.getElementById('enterButton');
+        const mainContent = document.getElementById('mainContent');
+        const popup = document.getElementById('popup');
+        const popupText = document.getElementById('popupText');
+        
+        // 图片加载错误处理
+        const handleImageError = (img, fallbackSrc) => {
+            if (img.src !== fallbackSrc) {
+                img.src = fallbackSrc;
+            }
+        };
+        
+        // 为封面图添加错误处理
+        const coverImage = document.querySelector('.cover-image');
+        coverImage.addEventListener('error', () => {
+            handleImageError(coverImage, 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjZjBmN2ZmIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xNTAgMTAwIEw5MCAxNjAgTDEyMCAxOTAgTDE1MCAxNjAgTDE4MCAxOTAgTDIwMCAxNjAgTDE1MCAxMDAgWiIgZmlsbD0iI2Q4ODMzMyIvPjwvc3ZnPg==');
+        });
+        
+        function checkIsBirthday() {
+            const now = new Date();
+            const lunar = LunarCalendar.solarToLunar(now);
+            return lunar.month === 10 && lunar.day === 2;
+        }
+        
+        function showPopup() {
+            const isBirthday = checkIsBirthday();
+            popupText.textContent = isBirthday ? '生日快乐' : '开心每一天';
+            popup.classList.add('visible');
+            
+            // 3秒后隐藏弹窗
+            setTimeout(() => {
+                popup.classList.remove('visible');
+            }, 3000);
+        }
+        
+        // 处理触摸和点击事件
+        enterButton.addEventListener('click', enterMainContent);
+        enterButton.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // 防止触摸事件触发点击事件
+            enterMainContent();
+        }, { passive: false });
+        
+        function enterMainContent() {
+            coverContainer.classList.add('hidden');
+            mainContent.classList.add('visible');
+        }
+        
+        // 主内容区触摸和点击事件
+        mainContent.addEventListener('click', showPopup);
+        mainContent.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            showPopup();
+        }, { passive: false });
+        
+        // 视频加载错误处理
+        const backgroundVideo = document.querySelector('.background-video');
+        backgroundVideo.addEventListener('error', () => {
+            // 视频加载失败时显示封面图替代
+            const poster = backgroundVideo.poster;
+            if (poster) {
+                const fallbackImg = document.createElement('img');
+                fallbackImg.src = poster;
+                fallbackImg.style.position = 'absolute';
+                fallbackImg.style.top = '0';
+                fallbackImg.style.left = '0';
+                fallbackImg.style.width = '100%';
+                fallbackImg.style.height = '100%';
+                fallbackImg.style.objectFit = 'cover';
+                fallbackImg.style.zIndex = '-1';
+                mainContent.appendChild(fallbackImg);
+            }
+        });
+    </script>
+</body>
+</html>
